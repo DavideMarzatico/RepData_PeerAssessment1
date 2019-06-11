@@ -8,18 +8,84 @@ output:
 
 ## Loading and preprocessing the data
 
-
+```{r}
+cls = c("integer", "character", "integer")
+df <- read.csv("activity.csv", head=TRUE, colClasses=cls, na.strings="NA")
+head(df)
+df$date <- as.Date(df$date)
+df_ign <- subset(df, !is.na(df$steps))
+```
 
 ## What is mean total number of steps taken per day?
 
-
+```{r}
+tot_steps <- sapply(FUN = sum,X = split(df$steps, df$date),na.rm = FALSE)
+tot_steps <- tot_steps[!is.na(tot_steps)]
+mean_steps <- mean(tot_steps,na.rm = TRUE)
+median_steps <- median(tot_steps,na.rm = TRUE)
+hist(tot_steps,breaks = 20,col = "red", xlab = "Daily total steps", ylab = "Frequency", main = "Distribution of total steps")
+mean_steps
+median_steps
+```
 
 ## What is the average daily activity pattern?
 
-
+```{r}
+interval <- sapply(split(df$steps,df$interval),mean,na.rm = TRUE)
+df$interval2=as.integer(df$interval)
+plot(df$interval[1:(24*60/5)],interval,type = "l", xlab="5-minute intervals", ylab="average steps in the interval across all days")
+max_steps <- max(interval)
+idx <- which.max(interval)
+max_steps
+df$interval[idx]
+```
 
 ## Imputing missing values
 
+```{r}
+sum(is.na(df$steps))
 
+df_impute <- df
+ndx <- is.na(df_impute$steps)
+int_avg <- tapply(df_ign$steps, df_ign$interval, mean, na.rm=TRUE, simplify=T)
+df_impute$steps[ndx] <- int_avg[as.character(df_impute$interval[ndx])]
 
+new_dailysum <- tapply(df_impute$steps, df_impute$date, sum, na.rm=TRUE, simplify=T)
+
+hist(x=new_dailysum,
+     col="red",
+     breaks=20,
+     xlab="daily steps",
+     ylab="frequency",
+     main="The distribution of daily total (with missing data imputed)")
+
+mean(new_dailysum)
+
+median(new_dailysum)
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+# helper function to decide if a day is a week day or not
+is_weekday <- function(d) {
+    wd <- weekdays(d)
+    if (wd == "Saturday" | wd == "Sunday")
+      wx <- "Weekend"
+    else 
+      wx <- "Weekday"
+}
+
+wx <- sapply(df_impute$date, is_weekday)
+df_impute$wk <- as.factor(wx)
+head(df_impute)
+
+wk_df <- aggregate(steps ~ wk+interval, data=df_impute, FUN=mean)
+
+library(lattice)
+xyplot(steps ~ interval | factor(wk),
+       layout = c(1, 2),
+       xlab="Interval",
+       ylab="Number of steps",
+       type="l",
+       lty=1,
+       data=wk_df)
+```
