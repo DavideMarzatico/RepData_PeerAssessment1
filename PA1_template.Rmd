@@ -1,8 +1,9 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: 'Reproducible Research: Peer Assessment 1'
+output:
   html_document:
-    keep_md: true
+    keep_md: yes
+  pdf_document: default
 ---
 
 
@@ -73,7 +74,7 @@ is_weekday <- function(d) {
     else 
       wx <- "Weekday"
 }
-
+Sys.setlocale("LC_ALL","English") 
 wx <- sapply(df_impute$date, is_weekday)
 df_impute$wk <- as.factor(wx)
 head(df_impute)
